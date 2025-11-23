@@ -4,7 +4,7 @@ from enum import Enum
 from parser import Program, Statement, Function, Return, Expression, Constant
 
 
-class IRInstruction(ABC):
+class AssemblyInstruction(ABC):
     pass
 
 
@@ -17,18 +17,18 @@ class Register(Enum):
 
 
 @dataclass
-class IRProgram:
-    function_definition: "IRFunction"
+class AssemblyProgram:
+    function_definition: "AssemblyFunction"
 
 
 @dataclass
-class IRFunction:
+class AssemblyFunction:
     name: str
-    instructions: list[IRInstruction]
+    instructions: list[AssemblyInstruction]
 
 
 @dataclass
-class Mov(IRInstruction):
+class Mov(AssemblyInstruction):
     src: Operand
     dst: Operand
 
@@ -44,7 +44,7 @@ class Reg(Operand):
 
 
 @dataclass
-class Ret(IRInstruction):
+class Ret(AssemblyInstruction):
     pass
 
 
@@ -52,26 +52,26 @@ class AssemblyGenerator:
     def __init__(self, ast: Program) -> None:
         self.ast = ast
 
-    def generate_assembly_ast(self) -> IRProgram:
+    def generate_assembly_ast(self) -> AssemblyProgram:
 
         func = self.ast.function_definition
-        ir_function: IRFunction = self.generate_function(func)
-        return IRProgram(ir_function)
+        assembly_function: AssemblyFunction = self.generate_function(func)
+        return AssemblyProgram(assembly_function)
 
     def generate_function(self, func: Function):
 
-        instructions: list[IRInstruction] = self.generate_instructions(func.body)
+        instructions: list[AssemblyInstruction] = self.generate_instructions(func.body)
 
-        return IRFunction(name=func.name, instructions=instructions)
+        return AssemblyFunction(name=func.name, instructions=instructions)
 
-    def generate_instructions(self, func_body: Statement) -> list[IRInstruction]:
+    def generate_instructions(self, func_body: Statement) -> list[AssemblyInstruction]:
 
         if isinstance(func_body, Return):
             return self.generate_return_and_mov(func_body.exp)
         return []
 
     def generate_return_and_mov(self, func_body_expression: Expression):
-        instructions: list[IRInstruction] = []
+        instructions: list[AssemblyInstruction] = []
         if isinstance(func_body_expression, Constant):
             instructions.append(
                 Mov(

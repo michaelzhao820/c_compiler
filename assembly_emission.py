@@ -1,6 +1,6 @@
 from assembly_generator import (
-    IRProgram,
-    IRInstruction,
+    AssemblyProgram,
+    AssemblyInstruction,
     Mov,
     Ret,
     Reg,
@@ -11,8 +11,8 @@ from assembly_generator import (
 
 
 class AssemblyEmitter:
-    def __init__(self, assembly_ast: IRProgram) -> None:
-        self.assembly_ast: IRProgram = assembly_ast
+    def __init__(self, assembly_ast: AssemblyProgram) -> None:
+        self.assembly_ast: AssemblyProgram = assembly_ast
 
     def emit(self) -> str:
         lines = []
@@ -29,7 +29,7 @@ class AssemblyEmitter:
 
         return "\n".join(lines)
 
-    def emit_instruction(self, instr: IRInstruction) -> str:
+    def emit_instruction(self, instr: AssemblyInstruction) -> str:
 
         if isinstance(instr, Mov):
             src = self.emit_operand(instr.src)

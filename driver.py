@@ -8,7 +8,7 @@ import subprocess
 from pathlib import Path
 from lexer import Lexer, Token
 from parser import Parser, Program
-from assembly_generator import IRProgram, AssemblyGenerator
+from assembly_generator import AssemblyProgram, AssemblyGenerator
 from assembly_emission import AssemblyEmitter
 
 
@@ -49,10 +49,10 @@ class CompilerDriver:
 
         # Assembly generation pass : Convert the AST into assembly AST
         ag: AssemblyGenerator = AssemblyGenerator(ast)
-        ir_ast: IRProgram = ag.generate_assembly_ast()
+        assembly_ast: AssemblyProgram = ag.generate_assembly_ast()
 
         # Code emission pass : Write that assembly to a file
-        ae: AssemblyEmitter = AssemblyEmitter(ir_ast)
+        ae: AssemblyEmitter = AssemblyEmitter(assembly_ast)
         assembly_text: str = ae.emit()
         assembly_file: Path = self.write_assembly(assembly_text)
         return assembly_file
