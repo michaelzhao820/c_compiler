@@ -1,12 +1,18 @@
 from assembly_generator import (
+    AllocateStack,
     AssemblyProgram,
     AssemblyInstruction,
     Mov,
+    Neg,
+    Not,
     Ret,
     Reg,
     ImmediateValue,
-    Operand,
+    AssemblyOperand,
+    AssemblyUnaryOperator,
     Register,
+    Stack,
+    Unary,
 )
 
 
@@ -21,6 +27,8 @@ class AssemblyEmitter:
 
         lines.append(f"    .globl {func.name}")
         lines.append(f"{func.name}:")
+        lines.append("    pushq %rbp")
+        lines.append("    movq %rsp, %rbp")
 
         for instr in func.instructions:
             lines.append("    " + self.emit_instruction(instr))
@@ -31,29 +39,50 @@ class AssemblyEmitter:
 
     def emit_instruction(self, instr: AssemblyInstruction) -> str:
 
-        if isinstance(instr, Mov):
-            src = self.emit_operand(instr.src)
-            dst = self.emit_operand(instr.dst)
-            return f"movl {src}, {dst}"
+        match instr:
+            case Mov(src, dst):
+                src_str = self.emit_operand(src)
+                dst_str = self.emit_operand(dst)
+                return f"movl {src_str}, {dst_str}"
 
-        elif isinstance(instr, Ret):
-            return "ret"
-        else:
-            raise ValueError(f"Unknown instruction type: {type(instr).__name__}")
+            case Unary(unary_operator, operand):
+                op_str = self.emit_unary_operator(unary_operator)
+                operand_str = self.emit_operand(operand)
+                return f"{op_str} {operand_str}"
 
-    def emit_operand(self, operand: Operand):
+            case AllocateStack(val):
+                return f"subq ${val}, %rsp"
 
-        if isinstance(operand, ImmediateValue):
-            return f"${operand.value}"
-        elif isinstance(operand, Reg):
-            return self.get_register_name(operand.register)
-        else:
-            raise ValueError(f"Unknown operand type: {type(operand).__name__}")
+            case Ret():
+                # Function epilogue: restore stack and return
+                return "movq %rbp, %rsp\n    popq %rbp\n    ret"
+
+            case _:
+                raise ValueError(f"Unknown instruction type: {type(instr).__name__}")
+
+    def emit_unary_operator(self, operator: AssemblyUnaryOperator):
+        match operator:
+            case Neg():
+                return "negl"
+            case Not():
+                return "notl"
+            case _:
+                raise ValueError(f"Unknown operand type: {type(operator).__name__}")
+
+    def emit_operand(self, operand: AssemblyOperand):
+
+        match operand:
+            case ImmediateValue():
+                return f"${operand.value}"
+            case Reg():
+                return self.get_register_name(operand.register)
+            case Stack(val):
+                return f"{val}(%rbp)"
+            case _:
+                raise ValueError(f"Unknown operand type: {type(operand).__name__}")
 
     def get_register_name(self, register: Register) -> str:
-        mapping = {
-            Register.EAX: "%eax",
-        }
+        mapping = {Register.EAX: "%eax", Register.R10: "%r10d"}
         if register not in mapping:
             raise ValueError(f"Unknown register: {register.name}")
         return mapping[register]

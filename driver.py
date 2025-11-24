@@ -10,6 +10,7 @@ from lexer import Lexer, Token
 from parser import Parser, Program
 from assembly_generator import AssemblyProgram, AssemblyGenerator
 from assembly_emission import AssemblyEmitter
+from tacky import TackyGenerator, TackyProgram
 
 
 class CompilerDriver:
@@ -47,8 +48,12 @@ class CompilerDriver:
         p = Parser(tokens)
         ast: Program = p.parse_program()
 
-        # Assembly generation pass : Convert the AST into assembly AST
-        ag: AssemblyGenerator = AssemblyGenerator(ast)
+        # IR three-address code (TAC) pass
+        tg = TackyGenerator(ast)
+        tacky_program: TackyProgram = tg.generate_tacky_ir()
+
+        # Assembly generation pass : Convert the Tacky into assembly AST
+        ag: AssemblyGenerator = AssemblyGenerator(tacky_program)
         assembly_ast: AssemblyProgram = ag.generate_assembly_ast()
 
         # Code emission pass : Write that assembly to a file

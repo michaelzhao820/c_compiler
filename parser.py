@@ -11,6 +11,10 @@ class Expression(ABC):
     pass
 
 
+class UnaryOperator(ABC):
+    pass
+
+
 @dataclass
 class Program:
     function_definition: "Function"
@@ -30,6 +34,22 @@ class Return(Statement):
 @dataclass
 class Constant(Expression):
     value: int
+
+
+@dataclass
+class Unary(Expression):
+    unary_operator: UnaryOperator
+    exp: "Expression"
+
+
+@dataclass
+class Complement(UnaryOperator):
+    pass
+
+
+@dataclass
+class Negate(UnaryOperator):
+    pass
 
 
 class Parser:
@@ -85,9 +105,38 @@ class Parser:
         return Return(expr)
 
     def parse_expression(self):
-        token: Token = self.consume(TokenType.CONSTANT)
-        if token.value is None:
+        token: Token = self.peek()
+        if token.tt == TokenType.CONSTANT:
+            token = self.consume(TokenType.CONSTANT)
+            if token.value is None:
+                raise SyntaxError(
+                    f"Internal error: CONSTANT token at position {self.index} has no value"
+                )
+            return Constant(token.value)
+
+        elif token.tt in (TokenType.HYPHEN, TokenType.TILDE):
+            operator: UnaryOperator = self.parse_unary_operator()
+            inner_expr = self.parse_expression()
+            return Unary(operator, inner_expr)
+
+        elif token.tt == TokenType.OPEN_PARENTHESIS:
+            self.consume(TokenType.OPEN_PARENTHESIS)
+            inner_expr = self.parse_expression()
+            self.consume(TokenType.CLOSE_PARENTHESIS)
+            return inner_expr
+        else:
             raise SyntaxError(
-                f"Internal error: CONSTANT token at position {self.index} has no value"
+                f"Expected expression, found {token.tt.value} "
+                f"('{token.lexeme}') at position {self.index}"
             )
-        return Constant(token.value)
+
+    def parse_unary_operator(self) -> UnaryOperator:
+        token = self.peek()
+        if token.tt == TokenType.TILDE:
+            self.consume(TokenType.TILDE)
+            return Complement()
+        elif token.tt == TokenType.HYPHEN:
+            self.consume(TokenType.HYPHEN)
+            return Negate()
+        else:
+            raise SyntaxError(f"Expected unary operator, found {token.tt.value}")

@@ -15,13 +15,16 @@ class TokenType(Enum):
     OPEN_BRACE = "OPEN_BRACE"
     CLOSE_BRACE = "CLOSE_BRACE"
     SEMICOLON = "SEMICOLON"
+    TILDE = "TILDE"
+    HYPHEN = "HYPHEN"
+    TWO_HYPHEN = "TWO_HYPHEN"
 
 
 @dataclass
 class Token:
     tt: TokenType
     lexeme: str
-    value: int | None
+    value: int | None = None
 
 
 class Lexer:
@@ -32,11 +35,14 @@ class Lexer:
         self.int = re.compile("int\b")
         self.void = re.compile("void\b")
         self.return_ = re.compile("return\b")
+        self.two_hyphen = re.compile(r"--")
         self.open_paren = re.compile(r"\(")
         self.close_paren = re.compile(r"\)")
         self.open_brace = re.compile(r"{")
         self.close_brace = re.compile(r"}")
         self.semicolon = re.compile(r";")
+        self.tilde = re.compile(r"~")
+        self.hyphen = re.compile(r"-")
 
     def tokenize(self) -> list[Token]:
 
@@ -48,6 +54,9 @@ class Lexer:
         patterns = [
             (self.identifier, TokenType.IDENTIFIER),
             (self.constant, TokenType.CONSTANT),
+            (self.two_hyphen, TokenType.TWO_HYPHEN),
+            (self.hyphen, TokenType.HYPHEN),
+            (self.tilde, TokenType.TILDE),
             (self.open_paren, TokenType.OPEN_PARENTHESIS),
             (self.close_paren, TokenType.CLOSE_PARENTHESIS),
             (self.open_brace, TokenType.OPEN_BRACE),
@@ -68,6 +77,10 @@ class Lexer:
                 m = pattern.match(file_str, pos)
                 if m:
                     lexeme = m.group()
+                    if tt == TokenType.TWO_HYPHEN:
+                        raise ValueError(
+                            f"Cannot support two_hyphen yet at '{file_str[pos]}' at position {pos}"
+                        )
                     if tt == TokenType.IDENTIFIER:
                         if lexeme == "int":
                             tt = TokenType.INT
